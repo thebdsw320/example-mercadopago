@@ -34,6 +34,8 @@ async function createOrder(order) {
 			Item: order,
 		};
 
+		console.log("Adding a new item...", params)
+
 		const result =  await dynamodb.put(params).promise();
 		console.log("Order created successfully ", result);
 	}
