@@ -7,14 +7,12 @@ const mercadopago = require("mercadopago");
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(express.static("../../client/html-js"));
 app.use(cors(
 	{
 		origin: "*",
 	}
 ));
 
-// REPLACE WITH YOUR ACCESS TOKEN AVAILABLE IN: https://developers.mercadopago.com/panel
 mercadopago.configure({
 	access_token: "TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
 });
@@ -66,7 +64,8 @@ async function updatePaidStatusOrder(orderId) {
 }
 
 app.get("/", function (req, res) {
-	res.status(200).sendFile("index.html");
+	res.json({ message: "Hello World" });
+	res.status(200);
 });
 
 app.post("/create_order", async (req, res) => {
@@ -100,7 +99,8 @@ app.post("/create_preference", (req, res) => {
 		auto_return: "approved",
 		metadata: {
 			"orderId": req.body.id
-		}
+		},
+		notification_url: "https://example-mercadopago.vercel.app/webhook",
 	};
 
 	mercadopago.preferences.create(preference)
@@ -121,11 +121,7 @@ app.get('/feedback', function (req, res) {
 	});
 });
 
-app.listen(8080, () => {
-	console.log("The server is now running on Port 8080");
-});
-
-app.post("/webhook", (req, res) => {
+app.post("/webhook", async (req, res) => {
 	const {
 		data: { id },
 		type,
@@ -136,7 +132,7 @@ app.post("/webhook", (req, res) => {
 
 	if (type === "payment") {
 		try {
-			mercadopago.payment.get(id).then((payment) => {
+			mercadopago.payment.get(id).then(async (payment) => {
 			const paymentData = payment.response;
 			console.log(paymentData);
 
@@ -144,7 +140,7 @@ app.post("/webhook", (req, res) => {
 			console.log(orderId);
 
 			if (paymentData.status === "approved" && paymentData.status_detail === "accredited") {
-				updatePaidStatusOrder(orderId);
+				await updatePaidStatusOrder(orderId);
 
 				res.json({received: true, updated: true});
 				res.status(200).send();
@@ -155,6 +151,13 @@ app.post("/webhook", (req, res) => {
 			res.status(500).send();
 		}
 	}
+	
+	res.json({received: true, updated: false});
+	res.status(200).send();
+});
+
+app.listen(8080, () => {
+	console.log("The server is now running on Port 8080");
 });
 
 module.exports = app;
