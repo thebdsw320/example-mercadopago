@@ -4,6 +4,7 @@ const {v4: uuidv4} = require("uuid");
 const app = express();
 const cors = require("cors");
 const mercadopago = require("mercadopago");
+const axios = require("axios");
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -23,7 +24,21 @@ AWS.config.update({
 	secretAccessKey: "nDUwSi+KLZT8N3DT+QdMix5kzGyO+lv4DP63l8nX",
 });
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+async function getPaymentData(paymentId) {
+	try {
+		const { data } = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+			headers: {
+				Authorization: "Bearer TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
+			},
+		});
+		
+        return data;
+	}
+	catch (err) {
+		console.error("Error", err);
+	}
+}
+
 
 async function createOrder(order) {
 	try {	
@@ -69,6 +84,8 @@ app.get("/", function (req, res) {
 });
 
 app.post("/create_order", async (req, res) => {
+	res.set("Allow-Access-Control-Origin", "*")
+
 	let order = {
 		Items: req.body.items,
 		UserId: req.body.userId,
@@ -98,7 +115,7 @@ app.post("/create_preference", (req, res) => {
 		},
 		auto_return: "approved",
 		metadata: {
-			"orderId": req.body.id
+			"order_id": req.body.id,
 		},
 		notification_url: "https://example-mercadopago.vercel.app/webhook",
 	};
@@ -121,7 +138,7 @@ app.get('/feedback', function (req, res) {
 	});
 });
 
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", (req, res) => {
 	const {
 		data: { id },
 		type,
@@ -132,26 +149,24 @@ app.post("/webhook", async (req, res) => {
 
 	if (type === "payment") {
 		try {
-			mercadopago.payment.get(id).then(async (payment) => {
-			const paymentData = payment.response;
-			console.log(paymentData);
+			getPaymentData(id).then(async (payment) => {
+				const { metadata: { order_id } } = payment;
+				const { status, status_detail } = payment;
 
-			const { metadata: { orderId } } = paymentData;
-			console.log(orderId);
+				if (status === "approved" && status_detail === "accredited") {
+					await updatePaidStatusOrder(order_id);
 
-			if (paymentData.status === "approved" && paymentData.status_detail === "accredited") {
-				await updatePaidStatusOrder(orderId);
-
-				res.json({received: true, updated: true});
-				res.status(200).send();
-			}
-		})}
+					res.json({received: true, updated: true});
+					res.status(200).send();
+				}
+			});
+		}
 		catch (err) {
 			console.error("Error", err);
 			res.status(500).send();
 		}
 	}
-	
+
 	res.json({received: true, updated: false});
 	res.status(200).send();
 });
