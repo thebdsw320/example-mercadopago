@@ -76,6 +76,8 @@ app.post("/create_order", (req, res) => {
 		Paid: false,
 	};
 
+	console.log(order);
+
 	createOrder(order);
 
 	res.json({
