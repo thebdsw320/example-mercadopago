@@ -69,7 +69,7 @@ app.get("/", function (req, res) {
 	res.status(200).sendFile("index.html");
 });
 
-app.post("/create_order", (req, res) => {
+app.post("/create_order", async (req, res) => {
 	let order = {
 		Items: req.body.items,
 		UserId: req.body.userId,
@@ -80,7 +80,7 @@ app.post("/create_order", (req, res) => {
 
 	console.log(order);
 
-	createOrder(order);
+	await createOrder(order);
 
 	res.json({
 		id: order.Id,
