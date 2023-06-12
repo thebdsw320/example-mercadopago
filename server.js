@@ -14,6 +14,8 @@ app.use(cors(
 	}
 ));
 
+dynamodb = new AWS.DynamoDB.DocumentClient();
+
 mercadopago.configure({
 	access_token: "TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
 });
@@ -138,7 +140,7 @@ app.get('/feedback', function (req, res) {
 	});
 });
 
-app.post("/webhook", (req, res) => {
+app.post("/webhook", async (req, res) => {
 	const {
 		data: { id },
 		type,
@@ -149,7 +151,8 @@ app.post("/webhook", (req, res) => {
 
 	if (type === "payment") {
 		try {
-			getPaymentData(id).then(async (payment) => {
+			await getPaymentData(id).then(async (payment) => {
+				console.log("Payment data", payment);
 				const { metadata: { order_id } } = payment;
 				const { status, status_detail } = payment;
 
