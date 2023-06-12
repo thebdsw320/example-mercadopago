@@ -14,6 +14,12 @@ app.use(cors(
 	}
 ));
 
+AWS.config.update({ 
+	region: "us-east-2",
+	accessKeyId: "AKIAZPK45TXJZV22JMZA",
+	secretAccessKey: "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",
+ });
+
 dynamodb = new AWS.DynamoDB.DocumentClient();
 
 mercadopago.configure({
