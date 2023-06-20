@@ -47,7 +47,6 @@ async function getPaymentData(paymentId) {
 	}
 }
 
-
 async function createOrder(order) {
 	try {	
 		const params = {
@@ -97,6 +96,7 @@ app.post("/create_order", async (req, res) => {
 	let order = {
 		Items: req.body.items,
 		UserId: req.body.userId,
+		DiscountCode: req.body.discountCode,
 		Id: uuidv4(),
 		CreatedAt: Date.now(),
 		Paid: false,
@@ -124,6 +124,7 @@ app.post("/create_preference", (req, res) => {
 		auto_return: "approved",
 		metadata: {
 			"order_id": req.body.id,
+			"discount_code": req.body.discountCode,
 		},
 		notification_url: "https://example-mercadopago.vercel.app/webhook",
 	};
@@ -159,13 +160,19 @@ app.post("/webhook", async (req, res) => {
 		try {
 			await getPaymentData(id).then(async (payment) => {
 				console.log("Payment data", payment);
-				const { metadata: { order_id } } = payment;
+				const { metadata: { order_id, discount_code } } = payment;
 				const { status, status_detail } = payment;
 
 				if (status === "approved" && status_detail === "accredited") {
 					await updatePaidStatusOrder(order_id);
 
-					res.json({received: true, updated: true});
+					if (discount_code) {
+						await axios.post("http://localhost:5000/coupon/redeem", {
+							Code: discount_code,
+							UserId: payment.metadata.user_id,
+						});
+					}
+
 					res.status(200).send();
 				}
 			});
@@ -175,8 +182,6 @@ app.post("/webhook", async (req, res) => {
 			res.status(500).send();
 		}
 	}
-
-	res.json({received: true, updated: false});
 	res.status(200).send();
 });
 
