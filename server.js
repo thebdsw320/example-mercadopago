@@ -32,6 +32,53 @@ AWS.config.update({
 	secretAccessKey: "nDUwSi+KLZT8N3DT+QdMix5kzGyO+lv4DP63l8nX",
 });
 
+async function createShipment(shippingData) {
+	const data = {
+		State: shippingData.state,
+		PostalCode: shippingData.postalCode,
+		City: shippingData.city,
+		Street: shippingData.street,
+		Phone: shippingData.phone,
+		Email: shippingData.email,
+		Name: shippingData.name,
+		Number: shippingData.number,
+		Reference: shippingData.reference,
+		Carrier: shippingData.carrier,
+		Service: shippingData.service,
+	};
+
+	const response = await axios.post("http://localhost:5000/generate", data)
+		.then((response) => {
+			console.log(response.data);
+			return response;
+		})
+		.catch((error) => {
+			console.log(error);
+		}
+	);
+
+	if (response.status === 200) {
+		return response.data;
+	}
+}
+
+async function getOrderData(orderId) {
+	try {
+		const params = {
+			TableName: "Compras-Boonil",
+			Key: {
+				Id: orderId,
+			},
+		};
+
+		const { Item } = await dynamodb.get(params).promise();
+		return Item;
+	}
+	catch (err) {
+		console.error("Error", err);
+	}
+}
+
 async function getPaymentData(paymentId) {
 	try {
 		const { data } = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -79,6 +126,27 @@ async function updatePaidStatusOrder(orderId) {
 
 		const result = await dynamodb.update(params).promise();
 		console.log("Order updated successfully ", result);
+	}
+	catch (err) {
+		console.error("Error", err);
+	}
+}
+
+async function updateLabelData(orderId, labelData) {
+	try {
+		const params = {
+			TableName: "Compras-Boonil",
+			Key: {
+				Id: orderId,
+			},
+			UpdateExpression: "set Label = :s",
+			ExpressionAttributeValues: {
+				":s": labelData,
+			},
+		};
+
+		const result = await dynamodb.update(params).promise();
+		console.log("Label data updated successfully ", result);
 	}
 	catch (err) {
 		console.error("Error", err);
@@ -166,9 +234,17 @@ app.post("/webhook", async (req, res) => {
 
 				if (status === "approved" && status_detail === "accredited") {
 					await updatePaidStatusOrder(order_id);
+					const orderData = await getOrderData(order_id);
+
+					console.log("Shipping data", orderData.ShippingData);
+
+					await createShipment(orderData.ShippingData).then(async (labelData) => {
+						console.log("Label data", labelData);
+						await updateLabelData(order_id, labelData);
+					});
 
 					if (discount_code) {
-						await axios.post("http://localhost:5000/coupon/redeem", {
+						await axios.post("http://localhost:5001/coupon/redeem", {
 							Code: discount_code,
 							UserId: payment.metadata.user_id,
 						});
