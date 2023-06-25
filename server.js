@@ -100,6 +100,7 @@ app.post("/create_order", async (req, res) => {
 		Id: uuidv4(),
 		CreatedAt: Date.now(),
 		Paid: false,
+		ShippingData: req.body.shipping,
 	};
 
 	console.log(order);
