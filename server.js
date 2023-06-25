@@ -237,18 +237,19 @@ app.post("/webhook", async (req, res) => {
 					const orderData = await getOrderData(order_id);
 
 					console.log("Shipping data", orderData.ShippingData);
+					console.log("Discount code ", discount_code);
 
-					await createShipment(orderData.ShippingData).then(async (labelData) => {
-						console.log("Label data", labelData);
-						await updateLabelData(order_id, labelData);
-					});
+					// await createShipment(orderData.ShippingData).then(async (labelData) => {
+					// 	console.log("Label data", labelData);
+					// 	await updateLabelData(order_id, labelData);
+					// });
 
-					if (discount_code) {
-						await axios.post("http://localhost:5001/coupon/redeem", {
-							Code: discount_code,
-							UserId: payment.metadata.user_id,
-						});
-					}
+					// if (discount_code) {
+					// 	await axios.post("http://localhost:5001/coupon/redeem", {
+					// 		Code: discount_code,
+					// 		UserId: payment.metadata.user_id,
+					// 	});
+					// }
 
 					res.status(200).send();
 				}
