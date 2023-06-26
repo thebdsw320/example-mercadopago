@@ -9,6 +9,7 @@ const axios = require("axios");
 const shippingAPI = "https://fjwrbcvro1.execute-api.us-east-2.amazonaws.com/dev";
 const couponAPI = "https://lzwmliiczj.execute-api.us-east-2.amazonaws.com/dev";
 
+// Se definen las configuraciones de AWS
 AWS.config.update({ 
 	region: "us-east-2",
 	accessKeyId: "AKIASJSARUPK26JEUKP3",
@@ -17,6 +18,7 @@ AWS.config.update({
 
 dynamodb = new AWS.DynamoDB.DocumentClient();
 
+// Se definen las configuraciones de Mercado Pago
 mercadopago.configure({
 	access_token: "TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
 });
@@ -29,6 +31,7 @@ app.use(cors(
 	}
 ));
 
+// Se define una funcion para actualizar un registro y agregar el atributo correspondiente a su envío
 async function createShipment(shippingData) {
 	const data = {
 		State: shippingData.state,
@@ -44,6 +47,7 @@ async function createShipment(shippingData) {
 		Service: shippingData.service,
 	};
 
+	// Se realiza la llamada a la API de envios
 	const response = await axios.post(`${shippingAPI}/generate`, data)
 		.then((response) => {
 			console.log(response.data);
@@ -54,11 +58,13 @@ async function createShipment(shippingData) {
 		}
 	);
 
+	// Si el estado de la respuesta es 200, entonces se regresa la data
 	if (response.status === 200) {
 		return response.data;
 	}
 }
 
+// Se define una funcion para obtener un registro de la tabla Compras-Boonil
 async function getOrderData(orderId) {
 	try {
 		const params = {
@@ -76,6 +82,7 @@ async function getOrderData(orderId) {
 	}
 }
 
+// Se define una funcion para obtener los datos de pago a traves de la API de Mercado Pago
 async function getPaymentData(paymentId) {
 	try {
 		const { data } = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -91,6 +98,7 @@ async function getPaymentData(paymentId) {
 	}
 }
 
+// Se define una funcion para crear un nuevo registro en Compras-Boonil
 async function createOrder(order) {
 	try {	
 		const params = {
@@ -108,6 +116,7 @@ async function createOrder(order) {
 	}
 }
 
+// Se define una funcion para actualizar un registro en Compras-Boonil que actualizara el estado de Paid
 async function updatePaidStatusOrder(orderId) {
 	try {
 		const params = {
@@ -129,6 +138,8 @@ async function updatePaidStatusOrder(orderId) {
 	}
 }
 
+// Se define una funcion para agregar el atributo Label a un registro de Compras-Boonil, Label contendra los datos del envio como la URL al
+// pdf con la etiqueta, tracking number, ID.
 async function updateLabelData(orderId, labelData) {
 	try {
 		const params = {
