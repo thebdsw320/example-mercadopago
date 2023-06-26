@@ -6,6 +6,9 @@ const cors = require("cors");
 const mercadopago = require("mercadopago");
 const axios = require("axios");
 
+const shippingAPI = "https://fjwrbcvro1.execute-api.us-east-2.amazonaws.com/dev";
+const couponAPI = "https://lzwmliiczj.execute-api.us-east-2.amazonaws.com/dev";
+
 AWS.config.update({ 
 	region: "us-east-2",
 	accessKeyId: "AKIASJSARUPK3GK7OSUK",
@@ -41,7 +44,7 @@ async function createShipment(shippingData) {
 		Service: shippingData.service,
 	};
 
-	const response = await axios.post("http://localhost:5000/generate", data)
+	const response = await axios.post(`${shippingAPI}/generate`, data)
 		.then((response) => {
 			console.log(response.data);
 			return response;
@@ -233,17 +236,17 @@ app.post("/webhook", async (req, res) => {
 					console.log("Shipping data", orderData.ShippingData);
 					console.log("Discount code ", discount_code);
 
-					// await createShipment(orderData.ShippingData).then(async (labelData) => {
-					// 	console.log("Label data", labelData);
-					// 	await updateLabelData(order_id, labelData);
-					// });
+					await createShipment(orderData.ShippingData).then(async (labelData) => {
+						console.log("Label data", labelData);
+						await updateLabelData(order_id, labelData);
+					});
 
-					// if (discount_code) {
-					// 	await axios.post("http://localhost:5001/coupon/redeem", {
-					// 		Code: discount_code,
-					// 		UserId: payment.metadata.user_id,
-					// 	});
-					// }
+					if (discount_code) {
+						await axios.post(`${couponAPI}/coupon/redeem`, {
+							Code: discount_code,
+							UserId: payment.metadata.user_id,
+						});
+					}
 
 					res.status(200).send();
 				}
