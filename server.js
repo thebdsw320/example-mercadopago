@@ -6,18 +6,10 @@ const cors = require("cors");
 const mercadopago = require("mercadopago");
 const axios = require("axios");
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(cors(
-	{
-		origin: "*",
-	}
-));
-
 AWS.config.update({ 
 	region: "us-east-2",
-	accessKeyId: "AKIAZPK45TXJZV22JMZA",
-	secretAccessKey: "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",
+	accessKeyId: "AKIASJSARUPK3GK7OSUK",
+	secretAccessKey: "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",
  });
 
 dynamodb = new AWS.DynamoDB.DocumentClient();
@@ -26,11 +18,13 @@ mercadopago.configure({
 	access_token: "TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
 });
 
-AWS.config.update({
-	region: "us-east-2",
-	accessKeyId: "AKIAZPK45TXJZV22JMZA",
-	secretAccessKey: "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",
-});
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(cors(
+	{
+		origin: "*",
+	}
+));
 
 async function createShipment(shippingData) {
 	const data = {
