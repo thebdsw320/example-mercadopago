@@ -11,8 +11,8 @@ const couponAPI = "https://lzwmliiczj.execute-api.us-east-2.amazonaws.com/dev";
 
 AWS.config.update({ 
 	region: "us-east-2",
-	accessKeyId: "AKIASJSARUPK3GK7OSUK",
-	secretAccessKey: "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",
+	accessKeyId: "AKIASJSARUPK26JEUKP3",
+	secretAccessKey: "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",
  });
 
 dynamodb = new AWS.DynamoDB.DocumentClient();
