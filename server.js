@@ -177,6 +177,7 @@ app.post("/create_order", async (req, res) => {
 		CreatedAt: Date.now(),
 		Paid: false,
 		ShippingData: req.body.shipping,
+		Total: req.body.total,
 	};
 
 	console.log(order);
