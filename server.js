@@ -256,7 +256,7 @@ app.post("/webhook", async (req, res) => {
 					if (discount_code) {
 						await axios.post(`${couponAPI}/coupon/redeem`, {
 							Code: discount_code,
-							UserId: payment.metadata.user_id,
+							OrderId: order_id,
 						});
 					}
 
