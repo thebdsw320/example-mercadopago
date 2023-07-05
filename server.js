@@ -6,21 +6,28 @@ const cors = require("cors");
 const mercadopago = require("mercadopago");
 const axios = require("axios");
 
-const shippingAPI = "https://fjwrbcvro1.execute-api.us-east-2.amazonaws.com/dev";
+require('dotenv').config();
+
+const serverless = require("serverless-http");
+
+const shippingAPI = "https://t82coqdy2g.execute-api.us-east-2.amazonaws.com/prod";
 const couponAPI = "https://lzwmliiczj.execute-api.us-east-2.amazonaws.com/dev";
+
+const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+const ordersTable = process.env.ORDERS_TABLE;
 
 // Se definen las configuraciones de AWS
 AWS.config.update({ 
 	region: "us-east-2",
-	accessKeyId: "AKIASJSARUPK26JEUKP3",
-	secretAccessKey: "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",
+	accessKeyId: AWS.config.credentials.accessKeyId,
+	secretAccessKey: AWS.config.credentials.secretAccessKey,
  });
 
 dynamodb = new AWS.DynamoDB.DocumentClient();
 
 // Se definen las configuraciones de Mercado Pago
 mercadopago.configure({
-	access_token: "TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
+	access_token: mpAccessToken,
 });
 
 app.use(express.urlencoded({ extended: false }));
@@ -68,7 +75,7 @@ async function createShipment(shippingData) {
 async function getOrderData(orderId) {
 	try {
 		const params = {
-			TableName: "Compras-Boonil",
+			TableName: ordersTable,
 			Key: {
 				Id: orderId,
 			},
@@ -87,7 +94,7 @@ async function getPaymentData(paymentId) {
 	try {
 		const { data } = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
 			headers: {
-				Authorization: "Bearer TEST-6443778252675198-050619-bc7a2c439258e7355456d4ac3e453cef-87432336",
+				Authorization: `Bearer ${mpAccessToken}`,
 			},
 		});
 		
@@ -102,7 +109,7 @@ async function getPaymentData(paymentId) {
 async function createOrder(order) {
 	try {	
 		const params = {
-			TableName: "Compras-Boonil",
+			TableName: ordersTable,
 			Item: order,
 		};
 
@@ -120,7 +127,7 @@ async function createOrder(order) {
 async function updatePaidStatusOrder(orderId) {
 	try {
 		const params = {
-			TableName: "Compras-Boonil",
+			TableName: ordersTable,
 			Key: {
 				Id: orderId,
 			},
@@ -143,7 +150,7 @@ async function updatePaidStatusOrder(orderId) {
 async function updateLabelData(orderId, labelData) {
 	try {
 		const params = {
-			TableName: "Compras-Boonil",
+			TableName: ordersTable,
 			Key: {
 				Id: orderId,
 			},
@@ -273,7 +280,7 @@ app.post("/webhook", async (req, res) => {
 });
 
 app.listen(8080, () => {
-	console.log("The server is now running on Port 8080");
+	console.log("Alive");
 });
 
-module.exports = app;
+module.exports.handler = serverless(app);
